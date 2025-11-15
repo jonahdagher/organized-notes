@@ -164,11 +164,13 @@
                 this.dash = [],
 
                 this.points = {x: [], y: []}
+                this.initialPoints = null
                 this.path = new Path2D()
 
                 this.bbox = {min_x: null, max_x: null, min_y: null, max_y: null, left: null, top: null, width: null, height: null}
 
                 this.bpID = bpID
+                this.startingBP = null
 
             }
 
@@ -192,9 +194,10 @@
             }
 
             translateStroke(dx, dy) {
+
                 for (let i = 0; i < this.points.x.length; i++) {
-                        this.points.x[i] += dx;
-                        this.points.y[i] += dy;
+                        this.points.x[i] = this.initialPoints.x[i] + dx;
+                        this.points.y[i] = this.initialPoints.y[i] + dy;
                     }
 
                 if (this.bbox.min_x !== null) {
@@ -224,8 +227,24 @@
 
         function RenderStrokes() {
             ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+            let bpInfoDict = {}
+
+            for (const bp of bulletPoints){
+                bpInfoDict[bp.id] = {opened: bp.opened, changeY: bp.bbox.top - bp.startingY}
+            }
+
+
             for (const s of strokes){
-                DrawStroke(s)
+                if (bpInfoDict[s.bpID].opened){
+                    // console.log(s.initialPoints.y[0])
+                    s.translateStroke(0, bpInfoDict[s.bpID].changeY)
+                    DrawStroke(s)
+                }
+
+                else if (s.bpID === null || s.bpID === undefined){
+                    DrawStroke(s)
+                }
             }
 
             for (const bp of bulletPoints){
@@ -252,8 +271,6 @@
         }
 
         function drawBBox(bbox) {
-            overlay.clearRect(0, 0, canvas.width, canvas.height);
-
             overlay.fillStyle = "rgba(0, 100, 255, 0.4)"
             overlay.fillRect(bbox.left, bbox.top, bbox.width, bbox.height)
 
@@ -268,53 +285,42 @@
 
             mouseDown(e) {
                 drawing = true
-                self.startingBP = null
                 const {x, y} = getXY(e)
                 
                 currentStroke = new Stroke(color, size)
 
                 for (const bp of bulletPoints){
-                    if (rectContains(bp.bbox, x, y, size=currentStroke.size)){
-                        self.startingBP = bp
+                    if (rectContains(bp.bbox, x, y, currentStroke.size)){
+                        currentStroke.startingBP = bp
+                        currentStroke.bpID = bp.id
+
                         break
                     }
                 }
 
-                if (self.startingBP){
-                    console.log(self.startingBP)
-                    if (rectContains(self.startingBP.bbox, x, y, currentStroke.size)){
+                if (currentStroke.startingBP){
+                    if (rectContains(currentStroke.startingBP.bbox, x, y, currentStroke.size)){
                         currentStroke.addPoint(x, y)
-                        //start bounding box
-                        currentStroke.bbox.min_x = x
-                        currentStroke.bbox.max_x = x
-                        currentStroke.bbox.min_y = y
-                        currentStroke.bbox.max_y = y
                     }
                 }
                 else {
-                    console.log("Nah twin")
                     currentStroke.addPoint(x, y)
-                    //start bounding box
-                    currentStroke.bbox.min_x = x
-                    currentStroke.bbox.max_x = x
-                    currentStroke.bbox.min_y = y
-                    currentStroke.bbox.max_y = y
                 }
+
+                updateBBox(currentStroke.bbox, x, y)
             }
 
             mouseMove(e) {
                 if (!drawing) return
                 const {x, y} = getXY(e)
-                if (self.startingBP){
-                    console.log(self.startingBP)
-                    if (rectContains(self.startingBP.bbox, x, y, currentStroke.size) ){
+                if (currentStroke.startingBP){
+                    if (rectContains(currentStroke.startingBP.bbox, x, y, currentStroke.size) ){
                         currentStroke.addPoint(x, y)
                         updateBBox(currentStroke.bbox, x, y)
                         DrawStroke(currentStroke, showBBox)
                     }
                 }
                 else {
-                    console.log("Nah twin")
                     currentStroke.addPoint(x, y)
                     updateBBox(currentStroke.bbox, x, y)
                     DrawStroke(currentStroke, showBBox)
@@ -324,8 +330,13 @@
                 drawing = false
                 strokes.push(currentStroke)
                 DrawStroke(currentStroke, showBBox)
+
+                currentStroke.initialPoints = {
+                    x: [...currentStroke.points.x],
+                    y: [...currentStroke.points.y]
+                }
+
                 currentStroke = null
-                console.log(strokes)
                 
             }
         }
@@ -367,7 +378,6 @@
         }
 
         function updateSelection(selection, x, y, includeStart=true){
-            // console.log(selection.bbox)
             if (!selection.bbox.start_x){
                 if (includeStart){
                     selection.bbox.start_x = x
@@ -439,6 +449,7 @@
             constructor(x,y, pointEnv=bulletPoints, titleHeight=70){
 
                 this.bbox = {left: x, top: y, width:500, height:100}
+                this.startingY = this.bbox.top
                 this.existingX = null
 
                 this.btn = document.createElement("button")
@@ -510,6 +521,7 @@
                     bp.updateYPos(bp)
                 }
 
+                RenderStrokes()
                 showBPregion(bulletPoints)
             }
 
