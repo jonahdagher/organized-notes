@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <title> notesGPT</title>
+
+        <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2/css/pico.min.css">
+        <link rel="stylesheet" href="style.css">
+
+    </head>
+
+    <body style="display: flex; flex-direction: column; align-items: center;">
+
+        <br>
+
+        
+
+
+        
+        <div style="width: 30%;">
+            <div class="grid">
+
+                <button id="pen"> PEN </button>
+                <button id="eraser"> ERASER </button>
+                <button id="select"> SELECT </button>
+                <input type="range" id="size">
+                <input type="color" id="color">
+
+            </div>
+        </div>
+
+        <div id="canvas-wrapper" style="position: relative; display: inline-block;">
+            <canvas id="canvas" width="2500" height="1150" style="background-color: white; border: 1px solid black;"></canvas>
+            <canvas id="overlay" width="2500" height="1150" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+        </div>
+
+    </body>
+
+    <script type="module">
+
+        //Get canvas and overlay
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        const overlay_canvas = document.getElementById("overlay")
+        const overlay = overlay_canvas.getContext("2d")
+
+        //Get buttons and options
+        const pen_btn = document.getElementById("pen")
+        const eraser_btn = document.getElementById("eraser")
+        const select_btn = document.getElementById("select")
+        const size_slider = document.getElementById("size")
+        const color_selector = document.getElementById("color")
+
+        //Defauly values (mode, etc)
+        let mode = "pen"
+
+        pen_btn.onclick = () => {mode = "pen"}
+        eraser_btn.onclick = () => {mode = "eraser"}
+        select_btn.onclick = () => {mode = "select"}
+
+        let size = size_slider.value
+        size_slider.addEventListener("input", () => {size = size_slider.value})
+
+        let color = color_selector.value
+        color_selector.addEventListener("input", () => {color = color_selector.value})
+
+        let start_x = 0; //for selecting
+        let start_y = 0;    
+
+
+
+        //drawing functions
+        function newStroke(color, size) {
+            return {
+                color,
+                size,
+                points: []
+            }}
+
+        function getXY(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {x: e.clientX - rect.left, y: e.clientY - rect.top}
+        }
+
+        function drawStroke(stroke) {
+            const points = stroke.points
+            if (points.length < 2) return
+            else {
+                ctx.beginPath();
+                ctx.strokeStyle = stroke.color;
+                ctx.lineWidth = stroke.size
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round"
+
+                ctx.moveTo(points[0].x, points[0].y)
+                for (let i = 1; i < points.length; i++){
+                    ctx.lineTo(points[i].x, points[i].y);
+                }
+
+                ctx.stroke();
+            }
+        }
+
+        function renderStrokes() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (const stroke of strokes) {
+                drawStroke(stroke);
+            }
+
+            if (currentStroke) drawStroke(currentStroke);
+        }
+
+
+        //Event Listeners
+
+        const strokes = []
+
+        let currentStroke = null
+
+        let drawing = false
+
+        canvas.addEventListener("mousedown", (e) => {
+            console.log("HERE!", mode)
+            drawing = true;
+            if (mode === "pen"){
+                currentStroke = newStroke(color, size);
+                const {x, y} = getXY(e);
+                currentStroke.points.push({x,y})
+            }
+
+            else if (mode === "select") {
+                start_x = getXY(e).x
+                start_y = getXY(e).y
+                console.log("HERE", start_x, start_y);
+            }
+        });
+
+        canvas.addEventListener("mousemove", (e) => {
+
+            
+
+            if (!drawing) return
+            else{
+                console.log(mode)
+
+                const {x, y} = getXY(e);
+
+                if (mode==="pen"){
+                    console.log(start_x, start_y, (x-start_x), (y-start_y))
+                    currentStroke.points.push({x,y})
+
+                    renderStrokes();
+                }
+
+                else if (mode==="eraser"){
+                    console.log(start_x, start_y, (x-start_x), (y-start_y))
+                    
+                    for (const [i, stroke] of strokes.entries()){
+                        let touching_stroke = stroke.points.find(p => Math.abs(p.x - x) <20 && Math.abs(p.y - y) < 10)
+                        if (touching_stroke){
+                            strokes.splice(i, 1)
+                            renderStrokes()
+                            break
+                        }
+                    }
+                }
+
+                else if (mode === "select"){
+                    overlay.fillStyle = "rgba(0, 100, 255, .4)"
+                    overlay.strokeStyle = "rgba(0, 100, 255, 1)"
+                    overlay.clearRect(0, 0, overlay_canvas.width, overlay_canvas.height)
+                    overlay.strokeRect(start_x, start_y, (x-start_x), (y-start_y))
+                    overlay.fillRect(start_x, start_y, (x-start_x), (y-start_y))
+                    console.log(start_x, start_y, (x-start_x), (y-start_y))
+                }
+                
+            }
+        });
+
+        canvas.addEventListener("mouseup", (e) =>{
+            drawing = false
+            if (currentStroke){
+                strokes.push(currentStroke);
+                currentStroke = null;
+            }
+        });
+
+        // eraser_btn.onclick = () => {
+        //     console.log(strokes)
+        // }
+        
+    </script>
+
+    </html>

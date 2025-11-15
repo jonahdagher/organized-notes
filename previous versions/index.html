@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <title> notesGPT</title>
+
+        <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2/css/pico.min.css">
+        <link rel="stylesheet" href="style.css">
+
+    </head>
+
+    <body style="display: flex; flex-direction: column; align-items: center;">
+
+    <br>
+
+    
+
+
+    
+    <div style="width: 30%;">
+
+        <div class="grid">
+
+            <button id="pen"> PEN </button>
+            <button id="eraser"> ERASER </button>
+            <button id="select"> SELECT </button>
+            <input type="range" id="size">
+            <input type="color" id="color">
+
+        </div>
+
+    </div>
+
+    <div id="canvas-wrapper" style="position: relative; display: inline-block;">
+        <canvas id="canvas" width="2000" height="1000" style="background-color: white; border: 1px solid black;"></canvas>
+        <canvas id="overlay" width="2000" height="1000" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+    </div>
+
+
+
+   <script type="module">
+
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const overlay = document.getElementById("overlay");
+        const overlay_ctx = overlay.getContext("2d");
+
+        const pen = document.getElementById("pen");
+        const eraser = document.getElementById("eraser");
+        const select = document.getElementById("select");
+
+        let mode = "pen"; // can be "pen", "eraser", or "select"
+        let drawing = false;
+        let prev_x = 0, prev_y = 0;
+
+        canvas.addEventListener("mousedown", (event) => {
+            drawing = true;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            prev_x = x;
+            prev_y = y;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        });
+
+        canvas.addEventListener("mouseup", () => {
+            drawing = false;
+        });
+
+        canvas.addEventListener("mousemove", (event) => {
+            if (!drawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            const size = document.getElementById("size").value;
+            const color = document.getElementById("color").value;
+
+            ctx.lineWidth = size;
+            ctx.strokeStyle = color;
+
+            console.log(`x:${x.toFixed(1)} y:${y.toFixed(1)} mode:${mode} size:${size} color:${color}`);
+
+            if (mode === "eraser") {
+                ctx.clearRect(x - size / 2, y - size / 2, size, size);
+                console.log("ERASING!!!");
+            } else if (mode === "pen") {
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            } else if (mode === "select") {
+                overlay_ctx.fillStyle = "rgba(0, 150, 255, 0.4)";
+                overlay_ctx.strokeStyle = "rgba(0, 150, 255, 1)";
+                overlay_ctx.clearRect(0, 0, canvas.width, canvas.height);
+                overlay_ctx.strokeRect(prev_x, prev_y, x - prev_x, y - prev_y);
+                overlay_ctx.fillRect(prev_x, prev_y, x - prev_x, y - prev_y);
+            }
+        });
+
+        pen.onclick = () => mode = "pen";
+        eraser.onclick = () => mode = "eraser";
+        select.onclick = () => mode = "select";
+
+</script>
+
+
+</body>
+
+</html>
+
+</body>
+
+</html>
+</body>
+
+</html>

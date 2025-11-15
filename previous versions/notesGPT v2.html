@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <title> notesGPT</title>
+
+        <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2/css/pico.min.css">
+        <link rel="stylesheet" href="style.css">
+
+    </head>
+
+    <body style="display: flex; flex-direction: column; align-items: center;">
+
+        <br>
+
+        <div style="width: 30%;">
+            <div class="grid">
+
+                <button id="pen"> PEN </button>
+                <button id="eraser"> ERASER </button>
+                <button id="select"> SELECT </button>
+                <button id="context"> CONTEXT </button>
+                <input type="range" id="size">
+                <input type="color" id="color">
+                <input type="checkbox" id="showBBox">
+
+            </div>
+        </div>
+
+        <div id="canvas-wrapper" style="position: relative; display: inline-block;">
+            <canvas id="canvas" width="2500" height="1150" style="background-color: white; border: 1px solid black;"></canvas>
+            <canvas id="overlay" width="2500" height="1150" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+        </div>
+
+    </body>
+
+    <script type="module">
+
+        //Get canvas and overlay
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        const overlay_canvas = document.getElementById("overlay")
+        const overlay = overlay_canvas.getContext("2d")
+
+        //Get buttons and options
+        const pen_btn = document.getElementById("pen")
+        const eraser_btn = document.getElementById("eraser")
+        const select_btn = document.getElementById("select")
+        const context_btn = document.getElementById("context") //temporary
+
+        //options
+        const size_slider = document.getElementById("size")
+        const color_selector = document.getElementById("color")
+        const showBBox_check = document.getElementById("showBBox")
+    
+
+        //Defauly values (mode, etc)
+        let mode = "pen"
+
+        pen_btn.onclick = () => {mode = "pen"}
+        eraser_btn.onclick = () => {mode = "eraser"}
+        select_btn.onclick = () => {mode = "select"}
+        context_btn.onclick = () => {mode = "context"}
+
+
+        let size = size_slider.value
+        size_slider.addEventListener("input", () => {
+            size = size_slider.value;
+            if (selectedStroke) selectedStroke.size = size;
+            renderStrokes()
+        })
+
+        let color = color_selector.value
+        color_selector.addEventListener("input", () => {
+            color = color_selector.value
+            selectedStroke.color = color
+            renderStrokes()
+        })
+
+        let showBBox = false
+        showBBox_check.addEventListener("input", () => {
+            showBBox = showBBox_check.checked
+            renderStrokes(showBBox)
+        })
+
+        let start_x = 0; //for selecting
+        let start_y = 0;    
+
+
+
+        //#region drawing functions
+
+        function getXY(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {x: e.clientX - rect.left, y: e.clientY - rect.top}
+        }
+
+        function drawStroke(s) {
+            // ctx.save();
+            ctx.lineWidth = s.size;
+            ctx.lineCap = s.cap ?? "round";
+            ctx.lineJoin = s.join ?? "round";
+            ctx.strokeStyle = s.color;
+            ctx.stroke(s.path);
+            // ctx.restore()            
+        }
+
+        function renderStrokes(showBBox = false) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            overlay.clearRect(0, 0, canvas.width, canvas.height);
+            for (const s of strokes) {drawStroke(s)};
+            if (currentStroke) {drawStroke(currentStroke)};
+
+            for (const s of strokes) {
+            if (showBBox) {
+
+                const padding = s.size/2
+                
+                overlay.fillStyle = "rgba(0,100,255,.4)"
+                overlay.fillRect(s.bbox.left, s.bbox.bottom, s.bbox.right - s.bbox.left, s.bbox.top - s.bbox.bottom)
+            }}
+        }
+
+       function newStroke(c, s) {
+            return {
+                path: new Path2D(),
+                color: c,                    
+                size: Number(s) || 4,         
+                cap: "round",
+                join: "round",
+                dash: [],
+                bbox: {left: 0, right: 0, top: 0, bottom: 0}                      
+            };
+            }
+
+        //#endregion
+
+
+        //Event Listeners
+
+        const strokes = new Set()
+
+        let currentStroke = null
+        let selectedStroke = null
+
+        let currentSelection = {x: 0, y: 0, width:0, height:0}
+
+        let drawing = false
+
+        canvas.addEventListener("mousedown", (e) => {
+
+            drawing = true;
+            const {x, y} = getXY(e);
+
+            //PEN LOGIC
+            if (mode === "pen"){
+                currentStroke = newStroke(color, size)
+                currentStroke.path.moveTo(x, y)
+
+                currentStroke.bbox.left = x;
+                currentStroke.bbox.right = x;
+                currentStroke.bbox.top = y;
+                currentStroke.bbox.bottom = y;
+
+                renderStrokes(showBBox)
+            }
+
+            //SELECTOR LOGIC
+            else if (mode === "select") {
+
+                //click outside select box to remove
+
+                const left_x = Math.min(currentSelection.x, (currentSelection.x+currentSelection.width))
+                const right_x = Math.max(currentSelection.x, (currentSelection.x+currentSelection.width))
+                const top_y = Math.min(currentSelection.y, (currentSelection.y+currentSelection.height))
+                const bottom_y = Math.max(currentSelection.y, (currentSelection.y+currentSelection.height))
+
+                currentSelection.x = x
+                currentSelection.y = y
+                overlay.clearRect(0, 0, overlay_canvas.width, overlay_canvas.height)
+
+                for (const s of strokes) {
+                    if (ctx.isPointInStroke(s.path, start_x, start_y)){
+                        selectedStroke = s
+                        break
+                    }
+                }
+            }
+
+            else if (mode === "context") {
+                const wrapper = document.getElementById("canvas-wrapper");
+
+                // remove any existing context button
+                document.getElementById("c")?.remove();
+
+                const c = document.createElement("button");
+                c.id = "c";
+                c.type = "button";
+                c.textContent = "context";
+
+                Object.assign(c.style, {
+                    position: "absolute",
+                    top: `${y}px`,
+                    left: `${x}px`,
+                    zIndex: "20",
+                    pointerEvents: "auto", 
+                });
+
+                wrapper.appendChild(c);
+
+                // optional: close if you click elsewhere
+                const close = (e) => {
+                    if (!c.contains(e.target)) c.remove();
+                    document.removeEventListener("mousedown", close, true);
+                };
+                document.addEventListener("mousedown", close, true);
+            }
+
+        });
+
+        canvas.addEventListener("mousemove", (e) => {
+            if (!drawing) return
+            else{
+                const {x, y} = getXY(e);
+                
+                //PEN LOGIC
+                if (mode==="pen"){
+                    currentStroke.path.lineTo(x, y)
+
+                    currentStroke.bbox.left = Math.min(x, currentStroke.bbox.left) ;
+                    currentStroke.bbox.right = Math.max(x, currentStroke.bbox.right) ;
+                    currentStroke.bbox.top = Math.min(y, currentStroke.bbox.top) ;
+                    currentStroke.bbox.bottom = Math.max(y, currentStroke.bbox.bottom) ;
+
+                    renderStrokes(showBBox)
+                }
+
+                //ERASER LOGIC
+                else if (mode==="eraser"){
+                    for (const s of strokes) {
+                        const {left, right, top, bottom} = s.bbox
+                        const padding = s.size/2
+                        if (x >= (left-padding) && x <= (right+padding) && y >= (top-padding) && y <= (bottom+padding)){ // bounding box does not account for line width. padding fixes this
+                            if (ctx.isPointInStroke(s.path, x, y)){
+                                strokes.delete(s)
+                                renderStrokes(showBBox)
+                            }}
+                    }
+                    
+                }
+                
+                //SELECTOR LOGIC
+                else if (mode === "select"){
+
+                    currentSelection.width = (x - currentSelection.x)
+                    currentSelection.height = (y - currentSelection.y)
+
+                    overlay.fillStyle = "rgba(0, 100, 255, .4)"
+                    overlay.strokeStyle = "rgba(0, 100, 255, 1)"
+                    overlay.clearRect(0, 0, overlay_canvas.width, overlay_canvas.height)
+                    overlay.strokeRect(currentSelection.x, currentSelection.y, currentSelection.width, currentSelection.height)
+                    overlay.fillRect(currentSelection.x, currentSelection.y, currentSelection.width, currentSelection.height)
+                }
+                
+            }
+        });
+
+        canvas.addEventListener("mouseup", (e) =>{
+            drawing = false
+
+            //PEN LOGIC
+            if (mode === "pen"){
+                if (currentStroke){
+                    strokes.add(currentStroke);
+                    renderStrokes(showBBox)
+                    currentStroke = null;
+            }}
+        });
+
+    </script>

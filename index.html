@@ -120,12 +120,12 @@
                     r2.top  + r2.height < r1.top);
             }
 
-            function rectContains(rect, x, y) {
+            function rectContains(rect, x, y, size=0) {
                 return (
-                    x >= rect.left &&
-                    x <= rect.left + rect.width &&
-                    y >= rect.top &&
-                    y <= rect.top + rect.height
+                    x - size/2 >= rect.left &&
+                    x + size/2<= rect.left + rect.width &&
+                    y - size/2 >= rect.top &&
+                    y + size/2<= rect.top + rect.height
                 );
             }
 
@@ -274,7 +274,7 @@
                 currentStroke = new Stroke(color, size)
 
                 for (const bp of bulletPoints){
-                    if (rectContains(bp.bbox, x, y)){
+                    if (rectContains(bp.bbox, x, y, size=currentStroke.size)){
                         self.startingBP = bp
                         break
                     }
@@ -282,7 +282,7 @@
 
                 if (self.startingBP){
                     console.log(self.startingBP)
-                    if (rectContains(self.startingBP.bbox, x, y)){
+                    if (rectContains(self.startingBP.bbox, x, y, currentStroke.size)){
                         currentStroke.addPoint(x, y)
                         //start bounding box
                         currentStroke.bbox.min_x = x
@@ -307,7 +307,7 @@
                 const {x, y} = getXY(e)
                 if (self.startingBP){
                     console.log(self.startingBP)
-                    if (rectContains(self.startingBP.bbox, x, y) ){
+                    if (rectContains(self.startingBP.bbox, x, y, currentStroke.size) ){
                         currentStroke.addPoint(x, y)
                         updateBBox(currentStroke.bbox, x, y)
                         DrawStroke(currentStroke, showBBox)
