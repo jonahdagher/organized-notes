@@ -1,0 +1,52 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+button {
+    background-color: transparent;
+    margin: .5rem;
+    padding: .5rem;
+    color: white;
+    box-shadow: none;
+    outline: none;
+    border: none;
+}
+
+button:hover {
+    color: grey;
+}
+
+button:active {
+    background-color: darkgray;
+}
+
+button.selected {
+    color: rgb(0, 119, 255)
+}
+button.selected:active {
+    color: rgb(0, 119, 255)
+}
+
+.tool-bar {
+    border-radius: 5px;
+    background-color: black;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+     box-shadow:
+    0 1px 3px rgba(0, 0, 0, .3),
+    0 4px 6px rgba(0, 0, 0, .3);
+}
+
+.bullet-button {
+    padding: 1rem;
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 1);
+    box-shadow:
+    0 1px 3px rgba(0, 0, 0, .3),
+    0 4px 6px rgba(0, 0, 0, .3);
+}
