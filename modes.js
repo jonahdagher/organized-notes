@@ -5,7 +5,7 @@ import { getXY } from "./canvasSetup.js";
 import { rectContains, pointInRect, newSelection, updateSelection } from "./utils.js";
 import { Stroke, strokes, drawStroke, renderStrokes } from "./strokes.js";
 import { updateBBox, drawBBox } from "./bbox.js";
-import { bulletPoints, BulletPoint } from "./bulletPoints.js";
+import { BulletPoint, createNewEnv } from "./bulletPoints.js";
 
 export class Mode {
   constructor(context = ctx) {
@@ -130,6 +130,9 @@ export class AddMode extends Mode {
   }
 
   mouseDown(e) {
+    const {x,y} = getXY(e);
+
+    if (appState.shiftDown) createNewEnv(appState.allBulletPointEnviornments)
   }
 
   mouseMove(e) {

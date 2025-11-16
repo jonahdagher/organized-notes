@@ -88,3 +88,17 @@ document.addEventListener("mouseup", (e) => {
   if (!inDrawingArea(e)) return;
   appState.currentMode?.mouseUp(e);
 });
+
+// keyboard events
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Shift"){
+    appState.shiftDown = true
+  }
+})
+
+document.addEventListener("keyup", (e) => {
+  if (e.key === "Shift"){
+    appState.shiftDown = false
+  }
+})

@@ -1,13 +1,12 @@
 // bulletPoints.js
 import { canvasWrapper, overlay, canvas } from "./canvasSetup.js";
 import { renderStrokes } from "./strokes.js";
-
-export const bulletPoints = [];
+import { appState } from "./state.js";
 
 export class BulletPoint {
   static id = 0;
 
-  constructor(x, y, pointEnv = bulletPoints, titleHeight = 70) {
+  constructor(x, y, pointEnv, titleHeight = 70) {
     this.bbox = { left: x, top: y, width: 500, height: 100 };
     this.startingY = this.bbox.top;
     this.existingX = null;
@@ -90,6 +89,13 @@ export class BulletPoint {
     this.bbox = { left: l, top: t, width: w, height: h };
     this.updateYPos();
   }
+}
+
+export function createNewEnv(globalEnviornment){
+  const EnvNum = Object.keys(globalEnviornment).length
+  console.log(`Created New Bullet Point Enviornment ${EnvNum}`)
+  globalEnviornment[EnvNum] = {}
+  return EnvNum
 }
 
 export function showBPregion(list) {

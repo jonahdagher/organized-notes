@@ -6,8 +6,11 @@ export const appState = {
 
   drawing: false,
   selecting: false,
+  shiftDown: false,
 
   currentStroke: null,
   currentSelection: null,
   currentMode: null,
+  
+  allBulletPointEnviornments: {}
 };
