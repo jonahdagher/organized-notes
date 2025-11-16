@@ -19,7 +19,6 @@ export function updateBBox(bbox, x, y) {
 }
 
 export function drawBBox(bbox) {
-  clearCanvas(overlayCanvas)
   if (bbox){
     overlay.fillStyle = "rgba(0, 100, 255, 0.4)";
     overlay.fillRect(bbox.left, bbox.top, bbox.width, bbox.height);

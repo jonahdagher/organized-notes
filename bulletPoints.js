@@ -1,16 +1,18 @@
 // bulletPoints.js
 import { canvasWrapper, overlay, canvas } from "./canvasSetup.js";
 import { renderStrokes } from "./strokes.js";
+import { drawBBox } from "./bbox.js";
 import { appState } from "./state.js";
 
 export class BulletPoint {
   static id = 0;
 
   constructor(x, y, pointEnv, titleHeight = 70) {
-    this.bbox = { left: x, top: y, width: 500, height: 100 };
-    this.startingY = this.bbox.top;
-    this.existingX = null;
+    this.bbox = {min_x: x, min_y: y, left: x, top: y, width: 500, height: 100 };
+    this.expandedBBox = structuredClone(this.bbox)
+    this.pointEnv = pointEnv;
 
+    //#region btn creation
     this.btn = document.createElement("button");
     this.id = BulletPoint.id++;
     this.btn.id = `btn-${this.id}`;
@@ -19,16 +21,15 @@ export class BulletPoint {
     this.btn.style.left = `${this.bbox.left}px`;
     this.btn.style.top = `${this.bbox.top}px`;
     this.btn.className = "bullet-button";
-    this.pointEnv = pointEnv;
 
     this.btn.onclick = () => this.toggle();
-
     canvasWrapper.append(this.btn);
 
     this.icon = document.createElement("span");
     this.icon.className = "material-symbols-outlined";
     this.icon.textContent = "arrow_drop_down";
     this.btn.append(this.icon);
+    //#endregion
 
     this.opened = true;
     this.titleHeight = titleHeight;
@@ -98,12 +99,29 @@ export function createNewEnv(globalEnviornment){
   return EnvNum
 }
 
-export function showBPregion(list) {
+export function getMaxBounding(env){
+  let maxWidth = 0
+  let maxHeight = 0
+  for (const bp of Object.values(env)){
+    const {min_x, min_y, left, top, width, height} = bp.expandedBBox
+    maxHeight = Math.max(maxHeight, height)
+    maxWidth = Math.max(maxWidth, width)
+  }
+
+  return {width: maxWidth, height: maxHeight}
+}
+
+export function drawAllBulletPointBBoxes(allEnvs) {
   overlay.clearRect(0, 0, canvas.width, canvas.height);
-  for (const bp of list) {
-    overlay.strokeStyle = "rgba(100, 0, 100, 1)";
-    overlay.fillStyle = "rgba(100, 0, 100, .3)";
-    overlay.fillRect(bp.bbox.left, bp.bbox.top, bp.bbox.width, bp.bbox.height);
-    overlay.strokeRect(bp.bbox.left, bp.bbox.top, bp.bbox.width, bp.bbox.height);
+
+  for (const envNum in allEnvs) {
+    const env = allEnvs[envNum];
+    for (const bpId in env) {
+      const bp = env[bpId];
+      if (bp && bp.bbox) {
+        drawBBox(bp.bbox);
+      }
+    }
   }
 }
+

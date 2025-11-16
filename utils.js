@@ -58,3 +58,10 @@ export function updateSelection(selection, x, y, includeStart = true) {
     selection.bbox.height = Math.abs(y - selection.bbox.start_y);
   }
 }
+
+// dictionary helpers
+
+export function getLargestKey(dict){
+  let largestKey = Math.max(...Object.keys(dict).map(Number))
+  return String(largestKey)
+}

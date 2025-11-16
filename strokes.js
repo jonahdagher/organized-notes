@@ -4,7 +4,11 @@ import { updateBBox, drawBBox } from "./bbox.js";
 import { appState } from "./state.js";
 
 export class Stroke {
+  static id = 0;
   constructor(c, s, bpID = null) {
+
+    this.id = Stroke.id++
+
     this.color = c;
     this.size = Number(s) || 4;
     this.cap = "round";
@@ -71,7 +75,6 @@ export class Stroke {
   }
 }
 
-export const strokes = [];
 
 export function drawStroke(s, showBounding = false) {
   ctx.lineWidth = s.size;
@@ -93,7 +96,7 @@ export function renderStrokes(bulletPoints = []) {
     bpInfoDict[bp.id] = { opened: bp.opened, changeY: bp.bbox.top - bp.startingY };
   }
 
-  for (const s of strokes) {
+  for (const s of Object.values(appState.strokes)) {
     if (s.bpID == null) {
       drawStroke(s, appState.showBBox);
     } else if (bpInfoDict[s.bpID]?.opened) {

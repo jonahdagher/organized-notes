@@ -2,6 +2,8 @@
 
 import { appState } from "./state.js";
 import { PenMode, EraserMode, SelectMode, AddMode, DebugMode } from "./modes.js";
+import { clearCanvas } from "./canvasSetup.js";
+import { drawAllBulletPointBBoxes } from "./bulletPoints.js";
 
 const canvasWrapper = document.getElementById("canvas-wrapper");
 
@@ -60,6 +62,11 @@ color_selector.addEventListener("input", () => {
 
 showBBox_check.addEventListener("input", () => {
   appState.showBBox = showBBox_check.checked;
+
+  clearCanvas(overlayCanvas);
+  if (appState.showBBox) {
+    drawAllBulletPointBBoxes(appState.allBulletPointEnviornments);
+  }
 });
 
 // set initial mode
@@ -67,7 +74,6 @@ appState.currentMode = new PenMode();
 
 // tool buttons
 pen_btn.onclick = () => { appState.currentMode = new PenMode(); };
-pen_btn.onclick = () => {console.log("test")}
 eraser_btn.onclick = () => { appState.currentMode = new EraserMode(); };
 select_btn.onclick = () => { appState.currentMode = new SelectMode(); };
 search_btn.onclick = () => { appState.currentMode = new DebugMode(); };
@@ -102,3 +108,5 @@ document.addEventListener("keyup", (e) => {
     appState.shiftDown = false
   }
 })
+
+
