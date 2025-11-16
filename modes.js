@@ -50,9 +50,9 @@ export class PenMode extends Mode {
   mouseUp(e) {
     appState.drawing = false;
     appState.strokes[appState.currentStroke.id] = appState.currentStroke;
-    drawStroke(appState.currentStroke);
     appState.currentStroke = null;
     appState.drawingBP = null;
+    renderStrokes()
   }
 }
 

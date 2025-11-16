@@ -36,16 +36,36 @@ export class BulletPoint {
     this.titleHeight = titleHeight;
   }
 
+  setHeight(y) {
+    this.bbox.top = y;
+    this.bbox.min_y = y;
+    this.expandedBBox.top = y;
+    this.expandedBBox.min_y = y;
+
+    this.btn.style.top = `${y}px`;
+  }
+
+
   getRelativeY() {
-    height = 0
-    for (const bp in Object.values(this.pointEnv)){
-      if (bp === this) break
-      else {
-        if (bp.opened) height += bp.bbox.height
-        else height += bp.titleHeight
+    const bullets = Object.values(this.pointEnv);
+    if (bullets.length === 0) return this.bbox.top;
+
+    let y = bullets[0].bbox.top;
+
+    for (const bp of bullets) {
+      if (bp === this) break;
+
+      if (bp.opened) {
+        y += bp.bbox.height;
+      } else {
+        y += bp.titleHeight;
       }
     }
+
+    return y;
   }
+
+  
 
 
   toggle() {
@@ -60,12 +80,8 @@ export class BulletPoint {
       drawBottom(this.bbox)
     }
     console.log(this.opened)
+    updateYpos(this.pointEnv)
     renderStrokes();
-  }
-
-  setBBox(l, t, w, h) {
-    this.bbox = { left: l, top: t, width: w, height: h };
-    this.updateYPos();
   }
 }
 
@@ -115,3 +131,11 @@ export function drawAllBulletPointBBoxes(allEnvs) {
   }
 }
 
+function updateYpos(pointEnv){
+  for (const bp of Object.values(pointEnv)){
+    clearBottom(bp.bbox)
+    let yPos = bp.getRelativeY()
+    bp.setHeight(yPos)
+    if (bp.opened) drawBottom(bp.bbox)
+  }
+}

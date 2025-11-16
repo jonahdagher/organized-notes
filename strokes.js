@@ -38,10 +38,25 @@ export class Stroke {
   getPath() {
     this.path = new Path2D();
     if (!this.points || this.points.x.length === 0) return this.path;
-    this.path.moveTo(this.points.x[0], this.points.y[0]);
-    for (let i = 1; i < this.points.x.length; i++) {
-      this.path.lineTo(this.points.x[i], this.points.y[i]);
+
+    if (!this.bpID){
+      this.path.moveTo(this.points.x[0], this.points.y[0]);
+      for (let i = 1; i < this.points.x.length; i++) {
+        this.path.lineTo(this.points.x[i], this.points.y[i]);
+    }}
+    else {
+      
+      let associaitedBP = appState.allBulletPointEnviornments[this.bpGroupID][this.bpID]
+      let left = associaitedBP.bbox.left
+      let top = associaitedBP.bbox.top
+      console.log(associaitedBP)
+      console.log(top)
+      this.path.moveTo(this.relativePoints.x[0]+left, this.relativePoints.y[0]+top);
+      for (let i = 1; i < this.relativePoints.x.length; i++) {
+      this.path.lineTo(this.relativePoints.x[i]+left, this.relativePoints.y[i]+top);
+      }
     }
+
     return this.path;
   }
 
@@ -59,6 +74,7 @@ export class Stroke {
 
   addPoint(x, y, bbox=null, size=4) {
     //probably should add some insurance these lengths stay the same
+    //and you itd be probably be better to derive the bullet point bbox from the bpID associated with the stroke(this.bpID and this.bpGroupID)
 
     if (bbox && !rectContains(bbox, x, y, size)) return
 
@@ -77,7 +93,7 @@ export class Stroke {
 }
 
 
-export function drawStroke(s, showBounding = false) {
+export function drawStroke(s, bbox=null) {
   if (!s.bbox){
   ctx.lineWidth = s.size;
   ctx.lineCap = s.cap;
