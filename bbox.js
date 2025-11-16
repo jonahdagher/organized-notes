@@ -1,5 +1,5 @@
 // bbox.js
-import { overlay, overlayCanvas, clearCanvas} from "./canvasSetup.js";
+import { overlay, overlayCanvas, clearCanvas, shadow} from "./canvasSetup.js";
 
 export function updateBBox(bbox, x, y) {
   if (bbox.min_x === null) {
@@ -27,3 +27,22 @@ export function drawBBox(bbox) {
     overlay.strokeRect(bbox.left, bbox.top, bbox.width, bbox.height);
   }
 }
+
+export function drawBottom(bbox) {
+  shadow.beginPath();
+  shadow.strokeStyle = "black";
+  shadow.moveTo(bbox.left, bbox.top + bbox.height);
+  shadow.lineTo(bbox.left + bbox.width, bbox.top + bbox.height);
+  shadow.stroke();
+}
+
+export function clearBottom(bbox, thickness = 2) {
+  shadow.clearRect(
+    bbox.left,
+    bbox.top + bbox.height - thickness / 2,
+    bbox.width,
+    thickness
+  );
+}
+
+

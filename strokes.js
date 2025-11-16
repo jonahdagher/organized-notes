@@ -2,10 +2,11 @@
 import { ctx, canvas } from "./canvasSetup.js";
 import { updateBBox, drawBBox } from "./bbox.js";
 import { appState } from "./state.js";
+import { rectContains } from "./utils.js";
 
 export class Stroke {
   static id = 0;
-  constructor(c, s, bpID = null) {
+  constructor(c, s, bpID = null, bpGroupID=null) {
 
     this.id = Stroke.id++
 
@@ -16,7 +17,7 @@ export class Stroke {
     this.dash = [];
 
     this.points = { x: [], y: [] };
-    this.initialPoints = { x: [], y: [] };
+    this.relativePoints = { x: [], y: [] };
     this.path = new Path2D();
 
     this.bbox = {
@@ -30,8 +31,8 @@ export class Stroke {
       height: null,
     };
 
+    this.bpGroupID = bpGroupID;
     this.bpID = bpID;
-    this.startingBP = null;
   }
 
   getPath() {
@@ -44,64 +45,73 @@ export class Stroke {
     return this.path;
   }
 
-  addPoint(x, y, relative = 0) {
+  getRelativePath(bbox){
+    this.path = new Path2D();
+    left = bbox.left
+    top = bbox.top
+    if (!this.relativePoints || this.relativePoints.x.length === 0) return this.path;
+    this.path.moveTo(this.relativePoints.x[0]+left, this.relativePoints.y[0]+top);
+    for (let i = 1; i < this.relativePoints.x.length; i++) {
+      this.path.lineTo(this.relativePoints.x[i]+left, this.relativePoints.y[i]+top);
+    }
+    return this.path;
+  }
+
+  addPoint(x, y, bbox=null, size=4) {
+    //probably should add some insurance these lengths stay the same
+
+    if (bbox && !rectContains(bbox, x, y, size)) return
+
     this.points.x.push(x);
     this.points.y.push(y);
 
-    this.initialPoints.x.push(x);
-    this.initialPoints.y.push(y + relative);
-  }
+    if (bbox){
+      const relative_x = x - bbox.left
+      const relative_y = y - bbox.top
 
-  translateStroke(dx, dy) {
-    for (let i = 0; i < this.points.x.length; i++) {
-      this.points.x[i] = this.initialPoints.x[i] + dx;
-      this.points.y[i] = this.initialPoints.y[i] + dy;
-    }
-
-    this.bbox = {
-      min_x: null,
-      max_x: null,
-      min_y: null,
-      max_y: null,
-      left: null,
-      top: null,
-      width: null,
-      height: null,
-    };
-
-    for (let i = 0; i < this.points.x.length; i++) {
-      updateBBox(this.bbox, this.points.x[i], this.points.y[i]);
+      this.relativePoints.x.push(relative_x)
+      this.relativePoints.y.push(relative_y)
     }
   }
+
 }
 
 
 export function drawStroke(s, showBounding = false) {
+  if (!s.bbox){
   ctx.lineWidth = s.size;
   ctx.lineCap = s.cap;
   ctx.lineJoin = s.join;
   ctx.strokeStyle = s.color;
   ctx.stroke(s.getPath());
-  if (showBounding) drawBBox(s.bbox);
+  }
+  else{
+    ctx.lineWidth = s.size;
+    ctx.lineCap = s.cap;
+    ctx.lineJoin = s.join;
+    ctx.strokeStyle = s.color;
+    ctx.stroke(s.getPath());
+
+  }
 }
 
 /**
  * bulletPoints is passed in to avoid circular imports.
  */
-export function renderStrokes(bulletPoints = []) {
+export function renderStrokes() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const bpInfoDict = {};
-  for (const bp of bulletPoints) {
-    bpInfoDict[bp.id] = { opened: bp.opened, changeY: bp.bbox.top - bp.startingY };
-  }
+      for (const s of Object.values(appState.strokes)){
+        //if stroke is in a bullet point, only render if the bulletpoint is opened
+        if (s.bpGroupID != null){
+          let associaitedBulletPoint = appState.allBulletPointEnviornments[s.bpGroupID][s.bpID]
+          if (associaitedBulletPoint.opened){
+            drawStroke(s)
+          }
+        }
+        else {
+          drawStroke(s)
+        }
+      }
 
-  for (const s of Object.values(appState.strokes)) {
-    if (s.bpID == null) {
-      drawStroke(s, appState.showBBox);
-    } else if (bpInfoDict[s.bpID]?.opened) {
-      s.translateStroke(0, bpInfoDict[s.bpID].changeY);
-      drawStroke(s, appState.showBBox);
     }
-  }
-}

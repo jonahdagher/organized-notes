@@ -2,10 +2,10 @@
 import { clearCanvas, ctx, overlay, overlayCanvas } from "./canvasSetup.js";
 import { appState } from "./state.js";
 import { getXY } from "./canvasSetup.js";
-import { rectContains, pointInRect, newSelection, updateSelection, getLargestKey } from "./utils.js";
+import { rectContains, pointInRect, newSelection, updateSelection, getLargestKey, shadowRect } from "./utils.js";
 import { Stroke, drawStroke, renderStrokes } from "./strokes.js";
-import { updateBBox, drawBBox } from "./bbox.js";
-import { BulletPoint, createNewEnv, drawAllBulletPointBBoxes } from "./bulletPoints.js";
+import { updateBBox, drawBBox, drawBottom } from "./bbox.js";
+import { BulletPoint, createNewEnv, drawAllBulletPointBBoxes, getBulletPoint } from "./bulletPoints.js";
 
 export class Mode {
   constructor(context = ctx) {
@@ -27,14 +27,22 @@ export class PenMode extends Mode {
     const { x, y } = getXY(e);
 
     appState.currentStroke = new Stroke(appState.color, appState.size);
-    console.log(appState.currentStroke)
-    appState.currentStroke.addPoint(x, y);
+    let touchingBulletPoint = getBulletPoint(appState.allBulletPointEnviornments, x, y)
+    
+    if (touchingBulletPoint){
+      const {groupID, bulletID} = touchingBulletPoint
+      appState.drawingBP = appState.allBulletPointEnviornments[groupID][bulletID]
+      appState.currentStroke.bpGroupID = groupID
+      appState.currentStroke.bpID = bulletID
+    }
+    
+    appState.currentStroke.addPoint(x, y, appState.drawingBP?.bbox, appState.currentStroke.size);
   }
 
   mouseMove(e) {
     if (!appState.drawing) return;
     const { x, y } = getXY(e);
-    appState.currentStroke.addPoint(x, y);
+    appState.currentStroke.addPoint(x, y, appState.drawingBP?.bbox, appState.currentStroke.size);
     updateBBox(appState.currentStroke.bbox, x, y);
     drawStroke(appState.currentStroke);
   }
@@ -42,9 +50,9 @@ export class PenMode extends Mode {
   mouseUp(e) {
     appState.drawing = false;
     appState.strokes[appState.currentStroke.id] = appState.currentStroke;
-    console.log(appState.strokes)
     drawStroke(appState.currentStroke);
     appState.currentStroke = null;
+    appState.drawingBP = null;
   }
 }
 
@@ -112,9 +120,9 @@ export class AddMode extends Mode {
   mouseDown(e) {
     const {x,y} = getXY(e);
     if (appState.selectingBP){
+      drawBottom(appState.currentBulletPoint.bbox)
       appState.selectingBP = false
       appState.currentBulletPoint = null
-      clearCanvas(overlayCanvas)
       return
     }
 
@@ -154,6 +162,7 @@ export class AddMode extends Mode {
       clearCanvas(overlayCanvas)
       drawBBox(appState.currentBulletPoint.bbox)
     }
+    
   }
 
   mouseUp(e) {

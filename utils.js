@@ -1,3 +1,5 @@
+import { shadow } from "./canvasSetup.js";
+
 // utils.js
 export function normalizeRect({ left, top, width, height }) {
   const x1 = Math.min(left, left + width);
@@ -30,6 +32,9 @@ export function rectContains(rect, x, y, size = 0) {
     y - size / 2 >= rect.top &&
     y + size / 2 <= rect.top + rect.height
   );
+}
+
+export function shadowRect(rect){
 }
 
 // selection helpers

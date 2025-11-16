@@ -1,8 +1,9 @@
 // bulletPoints.js
-import { canvasWrapper, overlay, canvas } from "./canvasSetup.js";
+import { canvasWrapper, overlay, canvas, shadow } from "./canvasSetup.js";
 import { renderStrokes } from "./strokes.js";
-import { drawBBox } from "./bbox.js";
+import { drawBBox, drawBottom, clearBottom } from "./bbox.js";
 import { appState } from "./state.js";
+import { rectContains } from "./utils.js";
 
 export class BulletPoint {
   static id = 0;
@@ -36,54 +37,30 @@ export class BulletPoint {
   }
 
   getRelativeY() {
-    let y = this.pointEnv[0].startingY;
-    for (const bp of this.pointEnv) {
-      if (bp === this) break;
-      y = y + bp.titleHeight;
-      if (bp.opened) {
-        y += (bp.bbox.height - bp.titleHeight);
+    height = 0
+    for (const bp in Object.values(this.pointEnv)){
+      if (bp === this) break
+      else {
+        if (bp.opened) height += bp.bbox.height
+        else height += bp.titleHeight
       }
     }
-    return y;
   }
 
-  getMaxY() {
-    let y = this.pointEnv[0].startingY;
-    for (const bp of this.pointEnv) {
-      if (bp === this) break;
-      y += bp.bbox.height;
-    }
-    return y;
-  }
-
-  updateYPos() {
-    const relY = this.getRelativeY();
-    this.bbox.top = relY;
-    this.btn.style.top = `${relY}px`;
-  }
-
-  updateXpos(x) {
-    this.bbox.left = x;
-    this.btn.style.left = `${this.bbox.left}px`;
-  }
 
   toggle() {
-    if (this.opened) {
-      this.originalHeight = this.bbox.height;
-      this.bbox.height = this.titleHeight;
-      this.opened = false;
+    if (this.opened){
+      this.opened = false
       this.icon.textContent = "arrow_right";
-    } else {
-      this.bbox.height = this.originalHeight;
-      this.opened = true;
+      clearBottom(this.bbox)
+    }
+    else {
+      this.opened = true
       this.icon.textContent = "arrow_drop_down";
+      drawBottom(this.bbox)
     }
-
-    for (const bp of this.pointEnv) {
-      bp.updateYPos();
-    }
-
-    renderStrokes(this.pointEnv);
+    console.log(this.opened)
+    renderStrokes();
   }
 
   setBBox(l, t, w, h) {
@@ -109,6 +86,19 @@ export function getMaxBounding(env){
   }
 
   return {width: maxWidth, height: maxHeight}
+}
+
+export function getBulletPoint(allEnv, x, y){
+  for (const i of Object.keys(allEnv)){
+    // console.log(allEnv[i])
+    let bulletGroup = allEnv[i]
+    for (const j of Object.keys(bulletGroup)){
+      let bp = bulletGroup[j]
+      if (rectContains(bp.bbox, x, y)){
+        return {groupID: i, bulletID: j}
+      }
+    }}
+  return null
 }
 
 export function drawAllBulletPointBBoxes(allEnvs) {

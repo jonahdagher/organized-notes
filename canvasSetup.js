@@ -9,6 +9,9 @@ canvas.height = window.innerHeight;
 export const overlayCanvas = document.getElementById("overlay");
 export const overlay = overlayCanvas.getContext("2d");
 
+export const shadowCanvas = document.getElementById("shadow")
+export const shadow = shadowCanvas.getContext("2d")
+
 export function getXY(e) {
   const rect = canvas.getBoundingClientRect();
   return { x: e.clientX - rect.left, y: e.clientY - rect.top };

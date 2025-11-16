@@ -5,6 +5,8 @@ export const appState = {
   showBBox: false,
 
   drawing: false,
+  drawingBP: null,
+
   selecting: false,
   selectingBP: false,
   shiftDown: false,
