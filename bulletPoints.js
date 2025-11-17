@@ -10,7 +10,7 @@ export class BulletPoint {
 
   constructor(x, y, pointEnv, titleHeight = 70) {
     this.bbox = {min_x: x, min_y: y, left: x, top: y, width: 500, height: 100 };
-    this.expandedBBox = structuredClone(this.bbox)
+    this.originalHeight = this.height
     this.pointEnv = pointEnv;
 
     //#region btn creation
@@ -39,8 +39,6 @@ export class BulletPoint {
   setHeight(y) {
     this.bbox.top = y;
     this.bbox.min_y = y;
-    this.expandedBBox.top = y;
-    this.expandedBBox.min_y = y;
 
     this.btn.style.top = `${y}px`;
   }
@@ -73,10 +71,13 @@ export class BulletPoint {
       this.opened = false
       this.icon.textContent = "arrow_right";
       clearBottom(this.bbox)
+      this.originalHeight = this.bbox.height
+      this.bbox.height = this.titleHeight
     }
     else {
       this.opened = true
       this.icon.textContent = "arrow_drop_down";
+      this.bbox.height = this.originalHeight
       drawBottom(this.bbox)
     }
     console.log(this.opened)

@@ -94,22 +94,12 @@ export class Stroke {
 
 
 export function drawStroke(s, bbox=null) {
-  if (!s.bbox){
   ctx.lineWidth = s.size;
   ctx.lineCap = s.cap;
   ctx.lineJoin = s.join;
   ctx.strokeStyle = s.color;
   ctx.stroke(s.getPath());
   }
-  else{
-    ctx.lineWidth = s.size;
-    ctx.lineCap = s.cap;
-    ctx.lineJoin = s.join;
-    ctx.strokeStyle = s.color;
-    ctx.stroke(s.getPath());
-
-  }
-}
 
 /**
  * bulletPoints is passed in to avoid circular imports.
