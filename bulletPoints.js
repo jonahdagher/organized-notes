@@ -12,30 +12,33 @@ export class BulletPoint {
     this.bbox = {min_x: x, min_y: y, left: x, top: y, width: 500, height: 100 };
     this.originalHeight = this.height
     this.pointEnv = pointEnv;
-
     //#region btn creation
+    //create html buttom
     this.btn = document.createElement("button");
     this.id = BulletPoint.id++;
     this.btn.id = `btn-${this.id}`;
-
+    //position and style button
     this.btn.style.position = "absolute";
     this.btn.style.left = `${this.bbox.left}px`;
     this.btn.style.top = `${this.bbox.top}px`;
     this.btn.className = "bullet-button";
-
+    //Define button behavior
     this.btn.onclick = () => this.toggle();
+    //add button to DOM
     canvasWrapper.append(this.btn);
-
+    //set button symbol
     this.icon = document.createElement("span");
     this.icon.className = "material-symbols-outlined";
     this.icon.textContent = "arrow_drop_down";
     this.btn.append(this.icon);
     //#endregion
 
+    //Button state (expanded or collapsed)
     this.opened = true;
     this.titleHeight = titleHeight;
   }
 
+  //move the bulletpoint box AND button
   setHeight(y) {
     this.bbox.top = y;
     this.bbox.min_y = y;
@@ -43,13 +46,12 @@ export class BulletPoint {
     this.btn.style.top = `${y}px`;
   }
 
-
+  //calculate a bulletpoints height based on the other bulletpoints in its enviornment
   getRelativeY() {
     const bullets = Object.values(this.pointEnv);
     if (bullets.length === 0) return this.bbox.top;
-
+    //if a bulletpoint is expanded, add its height, otherwise, only add it's title height
     let y = bullets[0].bbox.top;
-
     for (const bp of bullets) {
       if (bp === this) break;
 
@@ -80,7 +82,6 @@ export class BulletPoint {
       this.bbox.height = this.originalHeight
       drawBottom(this.bbox)
     }
-    console.log(this.opened)
     updateYpos(this.pointEnv)
     renderStrokes();
   }
